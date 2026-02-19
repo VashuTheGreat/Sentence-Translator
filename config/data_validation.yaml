@@ -1,0 +1,7 @@
+columns:
+  - English
+  - Hindi
+
+categorical_columns:
+  - English
+  - Hindi

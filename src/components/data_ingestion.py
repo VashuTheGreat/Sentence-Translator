@@ -76,7 +76,8 @@ class Sentence_Data_Ingestion(Data_Ingestion):
             
             data_ingestion_artifact = DataIngestionArtifact(
                 train_file_path=self.data_ingestion_config.training_file_path,
-                test_file_path=self.data_ingestion_config.testing_file_path
+                test_file_path=self.data_ingestion_config.testing_file_path,
+                features_file_path=self.data_ingestion_config.feature_store_file_path
             )
             logging.info("DataIngestionArtifact created successfully")
             logging.info("Data ingestion pipeline completed successfully")

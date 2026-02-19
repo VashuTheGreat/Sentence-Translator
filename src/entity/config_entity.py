@@ -23,3 +23,51 @@ class DataIngestionConfig:
     data_base_url:str = DATA_BASE_URL 
 
 
+@dataclass
+class DataValidationConfig:
+    data_validation_dir:str=os.path.join(training_pipeline.artifacts_dir,DATA_VALIDATION_DIR_NAME)
+    data_validation_file_path:str=os.path.join(data_validation_dir,DATA_VALIDATION_FILE_NAME)
+
+
+
+@dataclass
+class DataTransformationConfig:
+    data_transformation_dir: str = os.path.join(
+        training_pipeline.artifacts_dir, DATA_TRANSFORMATION_DIR
+    )
+    transformed_train_file_path: str = os.path.join(
+        data_transformation_dir, TRANSFORMED_TRAIN_FILE_NAME
+    )
+    transformed_test_file_path: str = os.path.join(
+        data_transformation_dir, TRANSFORMED_TEST_FILE_NAME
+    )
+    transformed_train_csv_path: str = os.path.join(
+        data_transformation_dir, TRANSFORMED_TRAIN_CSV_NAME
+    )
+    transformed_test_csv_path: str = os.path.join(
+        data_transformation_dir, TRANSFORMED_TEST_CSV_NAME
+    )
+    transformed_object_file_path: str = os.path.join(
+        data_transformation_dir, TRANSFORMED_OBJECT_FILE_NAME
+    )
+
+
+@dataclass
+class ModelTrainerConfig:
+    def __init__(self):
+        self.model_trainer_dir: str = os.path.join(
+            training_pipeline.artifacts_dir, MODEL_TRAINING_DIR_NAME
+        )
+        self.trained_model_file_path: str = os.path.join(
+            self.model_trainer_dir, MODEL_TRAINED_DIR, MODEL_FILE_NAME
+        )
+
+        # Load values from YAML
+        self._config = read_yaml_file_sync(MODEL_TRAINING_CONFIG_FILE_PATH)["model_training"]
+        self.embed_size: int = self._config["embed_size"]
+        self.hidden_size: int = self._config["hidden_size"]
+        self.batch_size: int = self._config["batch_size_training"]
+        self.epochs: int = self._config["epochs"]
+        self.learning_rate: float = self._config["learning_rate"]
+        self.teacher_forcing_ratio: float = self._config["teacher_forcing_ratio"]
+

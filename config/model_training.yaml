@@ -1,0 +1,8 @@
+model_training:
+  embed_size: 256
+  hidden_size: 512
+  batch_size_training: 32
+  batch_size_testing: 32
+  epochs: 5
+  learning_rate: 0.001
+  teacher_forcing_ratio: 0.5
