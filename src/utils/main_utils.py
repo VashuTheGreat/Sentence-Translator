@@ -59,12 +59,14 @@ async def save_object(file_path:str,obj:object)->None:
         raise MyException(e,sys)         
 
 
-async def load_numpy_array_data(file_path: str) -> np.array:
+async def load_numpy_array_data(file_path: str, mmap_mode: str = None, shape: tuple = None, dtype: str = 'int32') -> np.array:
     try:
         with open(file_path, 'rb') as file_obj:
-            return np.load(file_obj)
-    except Exception as e:
-        raise MyException(e, sys) from e
+            return np.load(file_obj, allow_pickle=True, mmap_mode=mmap_mode)
+    except Exception:
+        if mmap_mode and shape:
+            return np.memmap(file_path, dtype=dtype, mode=mmap_mode, shape=shape)
+        raise MyException("Failed to load numpy array and no shape/mmap info provided for raw access", sys)
 
 async def save_numpy_array_data(file_path: str, array: np.array):
     try:

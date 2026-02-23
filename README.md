@@ -1,64 +1,88 @@
-# Sentence-Translator
+# 🌐 Sentence-Translator: English to Hindi
 
-Project created with MLOps-Template cookiecutter. For more info: https://mlopsstudygroup.github.io/mlops-guide/
+![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)
+![PyTorch](https://img.shields.io/badge/PyTorch-Deep%20Learning-EE4C2C.svg)
+![Streamlit](https://img.shields.io/badge/Streamlit-Web%20App-FF4B4B.svg)
+![MLflow](https://img.shields.io/badge/MLflow-Tracking-0194E2.svg)
 
+A robust, enterprise-grade English-to-Hindi translation application built with a Sequence-to-Sequence (Seq2Seq) architecture and modern MLOps principles.
 
-## 📋 Requirements
+## 🚀 Key Features
 
-* DVC
-* Python3 and pip
-* Access to IBM Cloud Object Storage
+- **Advanced Deep Learning**: Implements a GRU-based Encoder-Decoder architecture with teacher forcing.
+- **Memory-Mapped Data (Scale-Ready)**: Custom `np.memmap` integration for data transformation and training, allowing the pipeline to handle datasets far larger than available RAM.
+- **Modular MLOps Pipeline**:
+  - **Data Ingestion**: Automated fetching and ingestion.
+  - **Data Validation**: Schema and quality checks.
+  - **Data Transformation**: Fixed-width tokenization and memory-mapped storage.
+  - **Model Training**: Scalable training with configurable hyperparameters.
+  - **Prediction**: Robust inference engine with architecture reconstruction.
+- **Live Tracking**: Integrated with **MLflow** and **DagsHub** for experiment tracking.
+- **Modern UI**: Interactive **Streamlit** dashboard for real-time translation.
 
-## 🏃🏻 Running Project
+## 📊 Live Experiment Tracking
 
-### 🔑 Setup IBM Bucket Credentials for IBM COS
+Monitor training metrics and model performance here:
+[DagsHub MLflow Tracking](https://dagshub.com/vanshsharma7832/Sentence-Translator.mlflow/#/)
 
-#### MacOS and Linux
-Setup your credentials on ```~/.aws/credentials``` and ```~/.aws/config```. DVC works perfectly with IBM Obejct Storage, although it uses S3 protocol, you can also see this in other portions of the repository.
+## 🛠️ Tech Stack
 
+- **Core**: PyTorch, NumPy, Pandas
+- **Experiment Tracking**: MLflow, DagsHub
+- **Platform**: Streamlit
+- **Dependency Management**: `uv`
+- **Data Versioning**: DVC
 
-~/.aws/credentials
+## 📁 Project Structure
 
-```credentials
-[default]
-aws_access_key_id = {Key ID}
-aws_secret_access_key = {Access Key}
+```text
+├── config/                 # YAML configs for training and validation
+├── src/
+│   ├── components/        # Pipeline components (Ingestion, Training, etc.)
+│   ├── entity/           # Data classes for artifacts and configs
+│   ├── pipelines/        # Process-specific workflow pipelines
+│   └── utils/            # Shared utilities (Main utils, Async handler)
+├── saved_model/            # Production-ready model and vocab artifacts
+├── StreamlitApp/           # Interactive web application
+└── notebooks/              # Research and experimentation
 ```
 
+## 🏗️ Getting Started
 
-### ✅ Pre-commit Testings
+### 1. Installation
 
-In order to activate pre-commit testing you need ```pre-commit```
+Using `uv` for lightning-fast setup:
 
-Installing pre-commit with pip
-```
-pip install pre-commit
-```
-
-Installing pre-commit on your local repository. Keep in mind this creates a Github Hook.
-```
-pre-commit install
+```powershell
+uv sync
 ```
 
-Now everytime you make a commit, it will run some tests defined on ```.pre-commit-config.yaml``` before allowing your commit.
+### 2. Training the Pipeline
 
-**Example**
-```
-$ git commit -m "Example commit"
+To run the full end-to-end training process:
 
-black....................................................................Passed
-pytest-check.............................................................Passed
+```powershell
+uv run python main.py
 ```
 
+### 3. Running Real-time Predictions
 
-### ⚗️ Using DVC
+Verify the prediction engine with a sample script:
 
-Download data from the DVC repository(analog to ```git pull```)
-```
-dvc pull
+```powershell
+uv run python src/tests/test_prediction_fix.py
 ```
 
-Reproduces the pipeline using DVC
+### 4. Launch the Web App
+
+```powershell
+uv run streamlit run StreamlitApp/app.py
 ```
-dvc repro
-```
+
+## 🧠 Technical Highlights: Memory Map Optimization
+
+To prevent "Out of Memory" errors during large-scale training, this project uses **Memory-Mapped Files (.dat)**. Instead of loading the entire tokenized dataset into RAM, we map the files directly to disk using `np.memmap`, ensuring nearly constant memory usage regardless of dataset size.
+
+---
+
+Developed with ❤️ by Vansh Sharma

@@ -18,9 +18,9 @@ from src.entity.config_entity import DataTransformationConfig
 from src.utils.main_utils import read_yaml_file_sync, save_numpy_array_data
 from src.constants import DATA_YAML_SCHEMA_FILE_PATH
 from src.exception import MyException
+import torch
 from collections import Counter
 from src.utils.main_utils import save_object
-
 
 def download_nltk_resources():
     try:
@@ -39,14 +39,15 @@ download_nltk_resources()
 
 def build_vocab(sentences):
     """
-    Builds a vocabulary from a list of sentences.
+    Builds a vocabulary from a list of sentences as a dictionary mapping words to IDs.
     """
     counter = Counter()
     for sentence in sentences:
         for word in str(sentence).split():
             counter[word] += 1
 
-    vocab = {"<pad>": 0, "<sos>": 1, "<eos>": 2}
+    # Special tokens
+    vocab = {"<pad>": 0, "<pos>": 1, "<eos>": 2}
 
     current_index = 3
     for word, _ in counter.items():
@@ -55,8 +56,6 @@ def build_vocab(sentences):
             current_index += 1
 
     return vocab
-
-
 
 
 class Data_Transformer(ABC):
@@ -70,6 +69,8 @@ class Data_Transformer(ABC):
         pass
 
 
+import numpy as np
+from src.constants import MAX_SEQ_LEN
 
 class Sentence_data_transformer(Data_Transformer):
 
@@ -110,13 +111,24 @@ class Sentence_data_transformer(Data_Transformer):
             logging.exception("Error during text cleaning")
             raise e
 
+    def tokenize_and_pad(self, sentence, vocab, max_len=MAX_SEQ_LEN):
+        tokens = [vocab.get('<pos>', 1)]
+        for word in str(sentence).split():
+            tokens.append(vocab.get(word, vocab.get('<unk>', 0)))
+        tokens.append(vocab.get('<eos>', 2))
+        
+        # Pad or truncate
+        if len(tokens) > max_len:
+            tokens = tokens[:max_len]
+        else:
+            tokens.extend([vocab.get('<pad>', 0)] * (max_len - len(tokens)))
+        return tokens
 
     async def initiate_data_transformation(self) -> DataTransformationArtifact:
 
         try:
             logging.info("Starting data transformation process")
 
-            # Read train & test data
             logging.info("Reading train dataset")
             data_train = pd.read_csv(
                 self.data_ingestion_artifact.train_file_path
@@ -127,7 +139,6 @@ class Sentence_data_transformer(Data_Transformer):
                 self.data_ingestion_artifact.test_file_path
             )
 
-            # Apply cleaning on schema columns
             logging.info("Applying text cleaning on schema columns")
 
             for col in tqdm(self._schema["columns"]):
@@ -139,63 +150,58 @@ class Sentence_data_transformer(Data_Transformer):
                 data_train[col] = data_train[col].progress_apply(self.clean_text)
                 data_test[col] = data_test[col].progress_apply(self.clean_text)
 
+            # Build vocabularies from English and Hindi cleaned columns
+            logging.info("Building vocabularies")
+            vocab_en = build_vocab(data_train["English"])
+            vocab_hi = build_vocab(data_train["Hindi"])
+
             # Create output directory
             os.makedirs(
                 self.data_transformation_config.data_transformation_dir,
                 exist_ok=True
             )
-            os.makedirs(
-                os.path.dirname(self.data_transformation_config.transformed_object_file_path),
-                exist_ok=True
+
+            # Save vocabularies as .pth artifacts
+            logging.info("Saving en_vocab.pth and hi_vocab.pth")
+            torch.save(vocab_en, self.data_transformation_config.en_vocab_file_path)
+            torch.save(vocab_hi, self.data_transformation_config.hi_vocab_file_path)
+
+            # Tokenize and save using memmap
+            logging.info("Creating memory-mapped data files")
+            num_train = len(data_train)
+            
+            # Create English training memmap
+            en_train_mmap = np.memmap(
+                self.data_transformation_config.transformed_train_file_path,
+                dtype='int32', mode='w+', shape=(num_train, MAX_SEQ_LEN)
+            )
+            # Create Hindi training memmap
+            hi_train_mmap = np.memmap(
+                self.data_transformation_config.transformed_test_file_path,
+                dtype='int32', mode='w+', shape=(num_train, MAX_SEQ_LEN)
             )
 
-            # Build vocabulary
-            vocabs={}
-            for col in self._schema["columns"]:
-                logging.info("Building vocabulary")
-                vocab = build_vocab(data_train[col])
-                vocabs[col] = vocab
+            logging.info("Populating memory-mapped arrays")
+            for i, row in enumerate(data_train.itertuples()):
+                en_train_mmap[i] = self.tokenize_and_pad(row.English, vocab_en)
+                hi_train_mmap[i] = self.tokenize_and_pad(row.Hindi, vocab_hi)
+            
+            # Flush and close
+            en_train_mmap.flush()
+            hi_train_mmap.flush()
+            del en_train_mmap
+            del hi_train_mmap
 
-            # Save vocabulary
-            logging.info("Saving vocabulary")
-            await save_object(
-                file_path=self.data_transformation_config.transformed_object_file_path,
-                obj=vocabs
-            )
-
-
-            # Save train & test data
-            logging.info("Saving transformed train CSV data")
-            data_train.to_csv(
-                self.data_transformation_config.transformed_train_csv_path,
-                index=False
-            )
-
-            logging.info("Saving transformed test CSV data")
-            data_test.to_csv(
-                self.data_transformation_config.transformed_test_csv_path,
-                index=False
-            )
-
-
-            # Save numpy arrays
-            logging.info("Saving transformed train numpy array")
-            await save_numpy_array_data(
-                file_path=self.data_transformation_config.transformed_train_file_path,
-                array=data_train.values
-            )
-
-            logging.info("Saving transformed test numpy array")
-            await save_numpy_array_data(
-                file_path=self.data_transformation_config.transformed_test_file_path,
-                array=data_test.values
-            )
+            logging.info("Saving transformed CSV for reference")
+            data_train.to_csv(self.data_transformation_config.transformed_train_csv_path, index=False)
+            data_test.to_csv(self.data_transformation_config.transformed_test_csv_path, index=False)
 
             # Create artifact
             data_transformation_artifact = DataTransformationArtifact(
                 transformed_train_file_path=self.data_transformation_config.transformed_train_file_path,
                 transformed_test_file_path=self.data_transformation_config.transformed_test_file_path,
-                transformed_object_file_path=self.data_transformation_config.transformed_object_file_path
+                en_vocab_file_path=self.data_transformation_config.en_vocab_file_path,
+                hi_vocab_file_path=self.data_transformation_config.hi_vocab_file_path
             )
 
             logging.info("Data transformation completed successfully")

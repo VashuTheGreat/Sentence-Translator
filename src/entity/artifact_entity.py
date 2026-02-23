@@ -21,13 +21,18 @@ class DataValidationArtifact:
 
 @dataclass
 class DataTransformationArtifact:
-    transformed_object_file_path:str
     transformed_train_file_path:str
     transformed_test_file_path:str
+    en_vocab_file_path:str
+    hi_vocab_file_path:str
 
 
 @dataclass
 class ModelTrainerArtifact:
     model_file_path:str
     loss_history:Optional[str]
+    en_dat_path:str
+    hi_dat_path:str
+    en_vocab_path:str
+    hi_vocab_path:str
     

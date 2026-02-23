@@ -1,43 +1,58 @@
-from numpy.testing import print_assert_equal
-from src.logger import *
-from src.components.data_ingestion import Sentence_Data_Ingestion
-from src.components.data_validation import Sentence_data_validation
-from src.components.data_transformation import Sentence_data_transformer
-from src.entity.config_entity import DataIngestionConfig,DataValidationConfig,DataTransformationConfig
 import asyncio
-from src.components.model_training import Sentence_model_trainer
-# data ingestion intiation config
-data_ingestion_config=DataIngestionConfig()
+import sys
+import os
 
-# data ingestion
-data_ingestion=Sentence_Data_Ingestion(data_ingestion_config=data_ingestion_config)
-data_ingestion_artifacts=asyncio.run(data_ingestion.initiate_data_ingestion())
+# Add project root to path such that no error world come src not found
+sys.path.append(os.getcwd())
 
+from src.logger import logging
+from src.exception import MyException
+from src.pipelines.Data_Ingestion_Pipeline import DataIngestionPipeline
+from src.pipelines.Data_Validation_Pipeline import DataValidationPipeline
+from src.pipelines.Data_Transformation_Pipeline import DataTransformationPipeline
+from src.pipelines.Model_Training_Pipeline import ModelTrainingPipeline
 
-# data validation config
-data_validation_config=DataValidationConfig()
+async def run_pipeline():
+    try:
+        logging.info("Starting the full training pipeline test")
 
-# data validation
-data_validation=Sentence_data_validation(data_validation_config=data_validation_config,data_ingestion_artifact=data_ingestion_artifacts)
-data_validation_artifacts=asyncio.run(data_validation.initiate_data_validation())
+        # Data Ingestion
+        logging.info("--- Data Ingestion Phase ---")
+        ingestion_pipeline = DataIngestionPipeline()
+        data_ingestion_artifact = await ingestion_pipeline.initiate_data_ingestion()
+        logging.info(f"Data ingestion completed: {data_ingestion_artifact}")
 
+        # Data Validation
+        logging.info("--- Data Validation Phase ---")
+        validation_pipeline = DataValidationPipeline()
+        data_validation_artifact = await validation_pipeline.initiate_data_validation(
+            data_ingestion_artifact=data_ingestion_artifact
+        )
+        logging.info(f"Data validation completed: {data_validation_artifact}")
 
-# data transformation config
-data_transformation_config=DataTransformationConfig()
+        # Data Transformation
+        logging.info("--- Data Transformation Phase ---")
+        transformation_pipeline = DataTransformationPipeline()
+        data_transformation_artifact = await transformation_pipeline.initiate_data_transformation(
+            data_ingestion_artifact=data_ingestion_artifact
+        )
+        logging.info(f"Data transformation completed: {data_transformation_artifact}")
 
-# data  Transformation
-data_transformation=Sentence_data_transformer(
-    data_transformation_config=data_transformation_config,
-    data_ingestion_artifact=data_ingestion_artifacts
-)
-data_transformation_artifact=asyncio.run(data_transformation.initiate_data_transformation())
+        # Model Training
+        logging.info("--- Model Training Phase ---")
+        training_pipeline = ModelTrainingPipeline()
+        model_trainer_artifact = await training_pipeline.initiate_model_training(
+            data_transformation_artifact=data_transformation_artifact
+        )
+        logging.info(f"Model training completed: {model_trainer_artifact}")
 
+        logging.info("Full training pipeline test completed successfully")
+        print("\nPipeline execution successful!")
+        print(f"Final Artifact: {model_trainer_artifact}")
 
+    except Exception as e:
+        logging.exception("Error occurred in pipeline test")
+        raise MyException(e, sys)
 
-# data training config
-data_trainer=Sentence_model_trainer(
-    data_transformation_artifact=data_transformation_artifact,
-    model_trainer_config=data_trainer_config
-)
-data_trainer_artifact=asyncio.run(data_trainer.initiate_model_training())
-print(data_trainer_artifact)
+if __name__ == "__main__":
+    asyncio.run(run_pipeline())

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from src.constants import *
+from src.utils.main_utils import read_yaml_file_sync
 import os
 from datetime import datetime
 TIMESTAMP: str = datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
@@ -47,8 +48,11 @@ class DataTransformationConfig:
     transformed_test_csv_path: str = os.path.join(
         data_transformation_dir, TRANSFORMED_TEST_CSV_NAME
     )
-    transformed_object_file_path: str = os.path.join(
-        data_transformation_dir, TRANSFORMED_OBJECT_FILE_NAME
+    en_vocab_file_path: str = os.path.join(
+        data_transformation_dir, EN_VOCAB_NAME
+    )
+    hi_vocab_file_path: str = os.path.join(
+        data_transformation_dir, HI_VOCAB_NAME
     )
 
 
@@ -62,7 +66,6 @@ class ModelTrainerConfig:
             self.model_trainer_dir, MODEL_TRAINED_DIR, MODEL_FILE_NAME
         )
 
-        # Load values from YAML
         self._config = read_yaml_file_sync(MODEL_TRAINING_CONFIG_FILE_PATH)["model_training"]
         self.embed_size: int = self._config["embed_size"]
         self.hidden_size: int = self._config["hidden_size"]

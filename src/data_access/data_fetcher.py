@@ -38,6 +38,7 @@ class SentenceDataFetcher(DataFetcher):
                 "test": TEST_SPLIT
             }
             data: pd.DataFrame = pd.read_parquet(self.url + splits[split])
+            # data=data[:100]
             data = await SentenceDataFetcher.recompile_data(data=data)
             return data
         except Exception as e:
