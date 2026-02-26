@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentence Translator | English → Hindi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #ff4b4b;
+            --background-color: #0e1117;
+            --secondary-background-color: #262730;
+            --text-color: #fafafa;
+            --border-color: rgba(250, 250, 250, 0.2);
+            --info-color: #0b51c1;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .subtitle {
+            color: rgba(250, 250, 250, 0.7);
+            margin-bottom: 2rem;
+        }
+
+        .container {
+            background-color: var(--secondary-background-color);
+            padding: 2rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        select {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .examples-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .example-card {
+            background-color: var(--background-color);
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .example-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            background-color: rgba(255, 75, 75, 0.05);
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 1rem;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            font-family: inherit;
+            font-size: 1.1rem;
+            resize: vertical;
+            margin-bottom: 1.5rem;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 1px var(--primary-color);
+        }
+
+        button {
+            background-color: transparent;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            padding: 0.6rem 2rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        button:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        #result-container {
+            margin-top: 2rem;
+            display: none;
+        }
+
+        .result-box {
+            background-color: rgba(30, 70, 32, 0.2);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+        }
+
+        .result-header {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        #result {
+            font-size: 1.25rem;
+            color: #d4edda;
+        }
+
+        .loader {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .tagline {
+            font-size: 0.8rem;
+            color: rgba(250, 250, 250, 0.4);
+            margin-top: 2rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>🌍 English → Hindi Translator</h1>
+    <p class="subtitle">Translate English sentences into Hindi using your trained model.</p>
+
+    <div class="container">
+        <h3 class="section-title">📌 Pick an Example Sentence</h3>
+        <p style="font-size: 0.9rem; color: rgba(250,250,250,0.6); margin-bottom: 1rem;">Click any example below or choose from dropdown to auto-fill.</p>
+        
+        <select id="example-select">
+            <option value="">-- Or choose from dropdown --</option>
+        </select>
+
+        <div class="examples-grid" id="examples-grid">
+            <!-- Examples will be injected here -->
+        </div>
+
+        <h3 class="section-title">✍️ Enter English Sentence</h3>
+        <textarea id="sentence" placeholder="Type or paste your sentence here..."></textarea>
+        
+        <button id="translate-btn" onclick="translateText()">
+            <span class="btn-text">🚀 Translate</span>
+            <div class="loader" id="loader"></div>
+        </button>
+
+        <div id="result-container">
+            <div class="result-header">📝 Translated Sentence:</div>
+            <div class="result-box">
+                <div id="result"></div>
+            </div>
+        </div>
+    </div>
+
+    <p class="tagline">Built with FastAPI and Deep Learning</p>
+
+    <script>
+        const examples = [
+            "Give your application an accessibility workout",
+            "Accerciser Accessibility Explorer",
+            "The default plugin layout for the bottom panel",
+            "The default plugin layout for the top panel",
+            "A list of plugins that are disabled by default",
+            "Highlight duration",
+            "The duration of the highlight box when selecting accessible nodes",
+            "Highlight border color",
+            "The color and opacity of the highlight border.",
+            "Highlight fill color",
+            "The color and opacity of the highlight fill.",
+            "API Browser",
+            "Browse the various methods of the current accessible",
+            "Hide private attributes",
+            "Method",
+            "Property",
+            "Value"
+        ];
+
+        const select = document.getElementById('example-select');
+        const grid = document.getElementById('examples-grid');
+        const textarea = document.getElementById('sentence');
+        const translateBtn = document.getElementById('translate-btn');
+        const loader = document.getElementById('loader');
+        const resultContainer = document.getElementById('result-container');
+        const resultDiv = document.getElementById('result');
+
+        // Populate Examples
+        examples.forEach(ex => {
+            // Dropdown
+            const opt = document.createElement('option');
+            opt.value = ex;
+            opt.textContent = ex;
+            select.appendChild(opt);
+
+        });
+
+        select.onchange = (e) => {
+            if (e.target.value) fillText(e.target.value);
+        };
+
+        function fillText(text) {
+            textarea.value = text;
+            textarea.focus();
+        }
+
+        async function translateText() {
+            const text = textarea.value.trim();
+            if (!text) {
+                alert("Please enter a sentence first.");
+                return;
+            }
+
+            // UI State: Loading
+            translateBtn.disabled = true;
+            loader.style.display = 'block';
+            resultContainer.style.display = 'none';
+
+            try {
+                const response = await fetch("/translate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ "data": text })
+                });
+
+                const data = await response.json();
+                
+                // UI State: Success
+                resultDiv.innerText = data.data;
+                resultContainer.style.display = 'block';
+                
+                // Scroll to result
+                resultContainer.scrollIntoView({ behavior: 'smooth' });
+            } catch (error) {
+                console.error("Translation error:", error);
+                alert("An error occurred during translation. Please try again.");
+            } finally {
+                // UI State: Reset
+                translateBtn.disabled = false;
+                loader.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

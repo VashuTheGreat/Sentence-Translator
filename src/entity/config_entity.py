@@ -3,7 +3,8 @@ from src.constants import *
 from src.utils.main_utils import read_yaml_file_sync
 import os
 from datetime import datetime
-TIMESTAMP: str = datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
+# TIMESTAMP: str = datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
+TIMESTAMP: str = "artifacts_date_time"
 
 @dataclass
 class TrainingPipeline:

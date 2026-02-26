@@ -3,6 +3,13 @@ import os
 import streamlit as st
 import asyncio
 import pandas as pd
+import nltk
+try:
+    nltk.download('punkt_tab')
+    nltk.download('stopwords')
+except Exception as e:
+    print(e)
+    
 
 # Add project root to path
 sys.path.append(os.getcwd())
