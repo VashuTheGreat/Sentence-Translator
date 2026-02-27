@@ -10,8 +10,18 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.middleware import SlowAPIMiddleware
 import asyncio
 from fastapi import HTTPException
+from dotenv import load_dotenv
+import nltk
 
-MAX_REQ=100
+load_dotenv()
+
+try:
+    nltk.download('punkt_tab')
+    nltk.download('stopwords')
+except Exception as e:
+    print(e)
+
+MAX_REQ=int(os.getenv("MAX_REQ", 100))
 semaphore=asyncio.Semaphore(MAX_REQ)
 
 # Add project root to path to find src
@@ -32,7 +42,7 @@ class TranslationRequest(BaseModel):
     data: str
 
 @app.get("/", response_class=HTMLResponse)
-@limiter.limit("5/minute")
+@limiter.limit(os.getenv("RATE_LIMIT", "5/minute"))
 async def home(request: Request):
     try:
         with open("templates/index.html", "r", encoding="utf-8") as f:
@@ -41,7 +51,7 @@ async def home(request: Request):
         return "<h1>Template Not Found</h1><p>Please ensure templates/index.html exists.</p>"
 
 @app.post("/translate")
-@limiter.limit("5/minute")
+@limiter.limit(os.getenv("RATE_LIMIT", "5/minute"))
 async def translate_sentence(request: Request, body: TranslationRequest):
     if semaphore.locked() and semaphore._value == 0:
         raise HTTPException(status_code=503, detail="Server Busy. Try again later.")
@@ -55,4 +65,4 @@ async def translate_sentence(request: Request, body: TranslationRequest):
         return {"data": result}
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host=os.getenv("HOST", "0.0.0.0"), port=os.getenv("PORT", 8000), reload=True)

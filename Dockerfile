@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir uv
 RUN uv pip install --system .
 
 
-CMD ["streamlit", "run", "StreamlitApp/app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+CMD ["uv", "run", "main.py"]
