@@ -291,9 +291,9 @@
             resultContainer.style.display = 'none';
 
             try {
-                const response = await fetch("/translate", {
+                const response = await fetch("/api/translate", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: { "Content-Type": "application/json", "X-API-KEY": "rN8sX8Qp0jV9KjP4mL3tQ6xYw2ZbA7cDkE9fGhIjKlMnOpQrStUvWxYz12345" },
                     body: JSON.stringify({ "data": text })
                 });
 

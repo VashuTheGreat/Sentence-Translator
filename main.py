@@ -11,6 +11,8 @@ from slowapi.middleware import SlowAPIMiddleware
 import asyncio
 from fastapi import HTTPException
 from dotenv import load_dotenv
+from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi.responses import JSONResponse
 import nltk
 
 load_dotenv()
@@ -32,8 +34,25 @@ app = FastAPI()
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+class APIKEYMIDDLEWARE(BaseHTTPMiddleware):
+    async def dispatch(self,request:Request,call_next):
+        if request.url.path.startswith("/api"):
+            api_key=request.headers.get("X-API-KEY")
+            if api_key!=os.getenv("API_KEY"):
+                raise HTTPException(status_code=401,detail="Invalid User Faltu req mat mar")
+        response=await call_next(request)
+        return response
+        
+@app.exception_handler(RateLimitExceeded)
+async def custom_rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={
+            "detail": "Bhai dheere hit kar, rate limit cross ho gaya hai. Thodi der baad try kar."
+        },
+    )
 app.add_middleware(SlowAPIMiddleware)
+app.add_middleware(APIKEYMIDDLEWARE)
 
 # Initialize Prediction Pipeline
 prediction_pipeline = PredictionPipeline()
@@ -50,7 +69,7 @@ async def home(request: Request):
     except FileNotFoundError:
         return "<h1>Template Not Found</h1><p>Please ensure templates/index.html exists.</p>"
 
-@app.post("/translate")
+@app.post("/api/translate")
 @limiter.limit(os.getenv("RATE_LIMIT", "5/minute"))
 async def translate_sentence(request: Request, body: TranslationRequest):
     if semaphore.locked() and semaphore._value == 0:
@@ -65,4 +84,4 @@ async def translate_sentence(request: Request, body: TranslationRequest):
         return {"data": result}
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host=os.getenv("HOST", "0.0.0.0"), port=int(os.getenv("PORT", 8000)), reload=True)
+    uvicorn.run("main:app", host=os.getenv("HOST", "0.0.0.0"), port=int(os.getenv("PORT", 8000)), reload=bool(os.getenv("RELOAD", False)))
