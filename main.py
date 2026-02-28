@@ -84,4 +84,4 @@ async def translate_sentence(request: Request, body: TranslationRequest):
         return {"data": result}
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host=os.getenv("HOST", "0.0.0.0"), port=int(os.getenv("PORT", 8000)), reload=bool(os.getenv("RELOAD", False)))
+    uvicorn.run("main:app", host=os.getenv("HOST", "0.0.0.0"), port=int(os.getenv("PORT", 8000)), reload=False)
